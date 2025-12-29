@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Meu Projeto Python 2025</title>
+</head>
+<body>
+    <h1>Lista de Tarefas</h1>
+    <input type="text" id="tarefaInput" placeholder="Nova tarefa...">
+    <button onclick="adicionarTarefa()">Adicionar</button>
+
+    <ul id="lista"></ul>
+
+    <script>
+        // Função para carregar tarefas do Back-end
+        async function carregarTarefas() {
+            const res = await fetch('/tarefas');
+            const tarefas = await res.json();
+            const lista = document.getElementById('lista');
+            lista.innerHTML = '';
+            tarefas.forEach(t => {
+                lista.innerHTML += `<li>${t.texto}</li>`;
+            });
+        }
+
+        // Função para enviar tarefa via POST
+        async function adicionarTarefa() {
+            const input = document.getElementById('tarefaInput');
+            await fetch('/tarefas', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({texto: input.value})
+            });
+            input.value = '';
+            carregarTarefas();
+        }
+
+        carregarTarefas(); // Inicializa a lista
+    </script>
+</body>
+</html>
