@@ -1,68 +1,257 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Galeria 2025</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; max-width: 1000px; margin: 40px auto; background: #f0f2f5; padding: 20px; }
-        nav { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .card { background: white; padding: 10px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); overflow: hidden; }
-        .midia { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; background: #000; }
-        .card p { padding: 10px; margin: 0; font-weight: bold; color: #333; text-align: center; }
-        a { text-decoration: none; color: #007bff; font-weight: bold; }
-    </style>
+<meta charset="UTF-8">
+<title>Galeria 2025</title>
+
+<style>
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #ffffff;
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 20px;
+    color: #333;
+}
+
+nav {
+    background: #0d6efd;
+    padding: 16px;
+    border-radius: 12px;
+    text-align: center;
+    color: white;
+    margin-bottom: 25px;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+h2 {
+    margin: 25px 0 15px;
+    color: #0d6efd;
+}
+
+/* GRID */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+/* CARD */
+.card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    padding: 12px;
+    position: relative;
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+}
+
+/* MIDIA */
+.midia {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    cursor: pointer;
+    background: #000;
+}
+
+.card p {
+    text-align: center;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+/* CHECKBOX */
+.card input[type="checkbox"] {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    transform: scale(1.4);
+    cursor: pointer;
+}
+
+/* AUDIO */
+.audio-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+}
+
+/* BOTÃO DELETE */
+.btn-delete {
+    margin-top: 30px;
+    width: 100%;
+    padding: 16px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-delete:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.btn-delete:hover:not(:disabled) {
+    background: #bb2d3b;
+}
+
+/* ===== MODAL TELA CHEIA ===== */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal img,
+.modal video {
+    max-width: 95%;
+    max-height: 95%;
+    border-radius: 14px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+}
+
+.close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    font-size: 42px;
+    color: white;
+    cursor: pointer;
+}
+</style>
 </head>
+
 <body>
 
-<!-- Substitua o conteúdo do body na galeria.html -->
 <nav>
-    <a href="/">➕ Novo Cadastro</a> | <strong>🖼️ Galeria</strong>
+    <a href="/">➕ Novo Cadastro</a> | <strong>🖼️ Galeria da Familia    </strong>
 </nav>
 
 <h2>🖼️ Imagens e Vídeos</h2>
 <div id="gridMidia" class="grid"></div>
 
-<h2 style="margin-top: 40px;">🎵 Áudios Gravados</h2>
-<div id="gridAudio" style="display: flex; flex-direction: column; gap: 10px;"></div>
+<h2>🎵 Áudios Gravados</h2>
+<div id="gridAudio" style="display:flex;flex-direction:column;gap:12px;"></div>
+
+<button class="btn-delete" id="btnDelete" disabled onclick="deletarSelecionados()">
+    🗑️ Deletar selecionados
+</button>
+
+<!-- MODAL -->
+<div id="modal" class="modal" onclick="fecharModal(event)">
+    <span class="close">&times;</span>
+    <div id="modalContent"></div>
+</div>
 
 <script>
-    async function carregarGaleria() {
-        const res = await fetch('/tarefas');
-        const tarefas = await res.json();
-        const gridMidia = document.getElementById('gridMidia');
-        const gridAudio = document.getElementById('gridAudio');
+let selecionados = [];
 
-        tarefas.forEach(t => {
-            if (t.midia) {
-                const extensao = t.midia.split('.').pop().toLowerCase();
-                
-                // Verifica se é áudio
-                if (['mp3', 'wav', 'ogg', 'm4a'].includes(extensao)) {
-                    gridAudio.innerHTML += `
-                        <div class="card" style="display: flex; align-items: center; justify-content: space-between; padding: 15px;">
-                            <span><strong>${t.texto}</strong></span>
-                            <audio src="${t.midia}" controls></audio>
-                        </div>`;
-                } 
-                // Verifica se é vídeo ou imagem
-                else {
-                    const ehVideo = ['mp4', 'webm', 'mov'].includes(extensao);
-                    const tag = ehVideo 
-                        ? `<video src="${t.midia}" class="midia" controls></video>`
-                        : `<img src="${t.midia}" class="midia">`;
+async function carregarGaleria() {
+    const res = await fetch('/tarefas');
+    const tarefas = await res.json();
 
-                    gridMidia.innerHTML += `
-                        <div class="card">
-                            ${tag}
-                            <p>${t.texto}</p>
-                        </div>`;
-                }
-            }
-        });
+    const gridMidia = document.getElementById('gridMidia');
+    const gridAudio = document.getElementById('gridAudio');
+
+    gridMidia.innerHTML = '';
+    gridAudio.innerHTML = '';
+
+    tarefas.forEach(t => {
+        if (!t.midia) return;
+
+        const ext = t.midia.split('.').pop().toLowerCase();
+        const isAudio = ['mp3','wav','ogg','m4a'].includes(ext);
+        const isVideo = ['mp4','webm','mov'].includes(ext);
+
+        if (isAudio) {
+            gridAudio.innerHTML += `
+                <div class="card audio-card">
+                    <input type="checkbox" onchange="toggle(${t.id}, this)">
+                    <strong>${t.texto}</strong>
+                    <audio src="${t.midia}" controls></audio>
+                </div>`;
+        } else {
+            const tag = isVideo
+                ? `<video src="${t.midia}" class="midia" onclick="abrirModal('video','${t.midia}')"></video>`
+                : `<img src="${t.midia}" class="midia" onclick="abrirModal('img','${t.midia}')">`;
+
+            gridMidia.innerHTML += `
+                <div class="card">
+                    <input type="checkbox" onchange="toggle(${t.id}, this)">
+                    ${tag}
+                    <p>${t.texto}</p>
+                </div>`;
+        }
+    });
+}
+
+function toggle(id, cb) {
+    cb.checked ? selecionados.push(id) : selecionados = selecionados.filter(i => i !== id);
+    document.getElementById('btnDelete').disabled = selecionados.length === 0;
+}
+
+async function deletarSelecionados() {
+    if (!confirm("Deseja realmente deletar os itens selecionados?")) return;
+
+    const res = await fetch('/tarefas/delete', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ids: selecionados})
+    });
+
+    if (res.ok) {
+        alert("Itens deletados!");
+        selecionados = [];
+        carregarGaleria();
+        document.getElementById('btnDelete').disabled = true;
+    } else {
+        alert("Erro ao deletar.");
     }
-    carregarGaleria();
+}
+
+/* MODAL */
+function abrirModal(tipo, src) {
+    const modal = document.getElementById('modal');
+    const content = document.getElementById('modalContent');
+
+    content.innerHTML = tipo === 'video'
+        ? `<video src="${src}" controls autoplay></video>`
+        : `<img src="${src}">`;
+
+    modal.style.display = 'flex';
+}
+
+function fecharModal(e) {
+    if (e.target.id === 'modal' || e.target.classList.contains('close')) {
+        document.getElementById('modal').style.display = 'none';
+        document.getElementById('modalContent').innerHTML = '';
+    }
+}
+
+carregarGaleria();
 </script>
 
 </body>
 </html>
+

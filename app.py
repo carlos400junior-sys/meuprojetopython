@@ -37,6 +37,24 @@ with app.app_context():
 @app.route('/')
 def index():
     return render_template('index.html')
+@app.route('/tarefas/delete', methods=['POST'])
+def deletar_tarefas():
+    data = request.get_json()
+    ids = data.get('ids', [])
+
+    for tarefa_id in ids:
+        tarefa = Tarefa.query.get(tarefa_id)
+        if tarefa:
+            if tarefa.arquivo_url:
+                caminho = os.path.join(app.config['UPLOAD_FOLDER'], tarefa.arquivo_url)
+                if os.path.exists(caminho):
+                    os.remove(caminho)
+
+            db.session.delete(tarefa)
+
+    db.session.commit()
+    return jsonify({"status": "ok"})
+
 
 @app.route('/galeria')
 def galeria():
