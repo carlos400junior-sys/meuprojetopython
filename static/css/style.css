@@ -41,23 +41,26 @@ nav a:hover {
 
 /* MOBILE */
 /* ===== MENU COMPACTO NO MOBILE ===== */
+/* ===== MENU SUPER COMPACTO NO MOBILE ===== */
 @media (max-width: 600px) {
 
     nav {
-        padding: 10px 14px;
+        padding: 8px 12px;          /* menos altura */
         border-radius: 0 0 12px 12px;
+        font-size: 14px;
     }
 
     nav strong {
-        font-size: 16px;
+        font-size: 15px;
     }
 
     nav a {
         font-size: 14px;
-        padding: 6px 10px;
+        padding: 4px 8px;           /* botões menores */
         margin-left: 6px;
     }
 }
+
 
 
 /* LAYOUT */
