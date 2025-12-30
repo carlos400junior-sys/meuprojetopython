@@ -4,121 +4,161 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro 2025</title>
-    <<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
 
-    <nav>
-        <strong>➕ Novo</strong> | <a href="/galeria">🖼️ Ver Galeria</a>
-    </nav>
+<nav>
+    <strong>➕ Novo</strong> | <a href="/galeria">🖼️ Ver Galeria</a>
+</nav>
+
+<div class="layout">
+
+    <div class="side-image"></div>
 
     <div class="box">
         <h2>Cadastrar Mídia</h2>
+
         <input type="text" id="textoInput" placeholder="Descrição ou título...">
-        
-        <!-- Upload de Arquivos (Imagem/Vídeo) -->
-        <input type="file" id="arquivoInput" accept="image/*,video/*">
-        <button id="btnSalvar" onclick="salvar()">Enviar Arquivo</button>
-    
-        <!-- Gravação de Áudio -->
+
+        <input type="file" id="arquivoInput" accept="image/*,video/*,audio/*">
+
+        <button id="btnSalvar" type="button" onclick="salvar()">Enviar Arquivo</button>
+
         <div class="audio-section">
             <h3>🎙️ Gravar Áudio</h3>
-            <button id="btnStart" type="button" style="background: #28a745;">🔴 Iniciar Gravação</button>
-            <button id="btnStop" type="button" style="background: #dc3545;" disabled>⏹️ Parar e Enviar</button>
+            <button id="btnStart" type="button">🔴 Iniciar Gravação</button>
+            <button id="btnStop" type="button" disabled>⏹️ Parar e Enviar</button>
             <p id="statusAudio"></p>
         </div>
     </div>
 
-    <script>
-        // --- FUNÇÃO PARA SALVAR IMAGEM OU VÍDEO ---
-        async function salvar() {
-            const texto = document.getElementById('textoInput').value;
-            const arquivoInput = document.getElementById('arquivoInput');
-            const btn = document.getElementById('btnSalvar');
+</div>
 
-            if (!texto) return alert("Por favor, digite um texto descritivo.");
-            if (!arquivoInput.files[0]) return alert("Selecione um arquivo primeiro.");
+<script>
+/* ========= UPLOAD NORMAL ========= */
+async function salvar() {
+    const texto = textoInput.value;
+    const arquivo = document.getElementById('arquivoInput').files[0];
+    const btn = document.getElementById('btnSalvar');
 
-            const formData = new FormData();
-            formData.append('texto', texto);
-            formData.append('arquivo', arquivoInput.files[0]);
+    if (!texto) {
+        alert("Digite uma descrição.");
+        return;
+    }
+    if (!arquivo) {
+        alert("Selecione um arquivo.");
+        return;
+    }
 
-            btn.disabled = true;
-            btn.innerText = "Enviando...";
+    const formData = new FormData();
+    formData.append('texto', texto);
+    formData.append('arquivo', arquivo);
 
-            try {
-                const res = await fetch('/tarefas', { method: 'POST', body: formData });
-                if (res.ok) {
-                    alert("Arquivo salvo com sucesso!");
-                    document.getElementById('textoInput').value = '';
-                    arquivoInput.value = '';
-                } else {
-                    alert("Erro ao salvar no servidor.");
-                }
-            } catch (err) {
-                alert("Erro de conexão com o servidor.");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Enviar Arquivo";
-            }
+    btn.disabled = true;
+    btn.innerText = "Enviando...";
+
+    try {
+        const res = await fetch('/tarefas', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (res.ok) {
+            alert("Arquivo enviado com sucesso!");
+            textoInput.value = "";
+            document.getElementById('arquivoInput').value = "";
+        } else {
+            alert("Erro ao enviar arquivo.");
+        }
+    } catch (e) {
+        alert("Erro de conexão.");
+        console.error(e);
+    }
+
+    btn.disabled = false;
+    btn.innerText = "Enviar Arquivo";
+}
+
+/* ========= AUDIO ========= */
+let mediaRecorder;
+let audioChunks = [];
+
+const btnStart = document.getElementById('btnStart');
+const btnStop = document.getElementById('btnStop');
+const statusAudio = document.getElementById('statusAudio');
+const textoInput = document.getElementById('textoInput');
+
+function getMimeType() {
+    const types = [
+        'audio/webm;codecs=opus',
+        'audio/ogg;codecs=opus',
+        'audio/webm',
+        'audio/ogg'
+    ];
+    return types.find(t => MediaRecorder.isTypeSupported(t));
+}
+
+btnStart.onclick = async () => {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType = getMimeType();
+
+        if (!mimeType) {
+            alert("Formato de áudio não suportado");
+            return;
         }
 
-        // --- LÓGICA DE GRAVAÇÃO DE ÁUDIO ---
-        let mediaRecorder;
-        let audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream, { mimeType });
+        audioChunks = [];
 
-        const btnStart = document.getElementById('btnStart');
-        const btnStop = document.getElementById('btnStop');
-        const statusAudio = document.getElementById('statusAudio');
-
-        btnStart.onclick = async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-
-                mediaRecorder.ondataavailable = (event) => {
-                    audioChunks.push(event.data);
-                };
-
-                mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
-                    const texto = document.getElementById('textoInput').value || "Áudio Gravado";
-                    
-                    const formData = new FormData();
-                    formData.append('texto', texto);
-                    // Nomeia o arquivo com um timestamp para evitar duplicatas
-                    formData.append('arquivo', audioBlob, `audio_${Date.now()}.mp3`);
-
-                    statusAudio.innerText = "Enviando áudio para o banco...";
-                    
-                    const res = await fetch('/tarefas', { method: 'POST', body: formData });
-                    if(res.ok) {
-                        alert("Áudio gravado e salvo com sucesso!");
-                        document.getElementById('textoInput').value = '';
-                        statusAudio.innerText = "";
-                    } else {
-                        alert("Erro ao salvar áudio.");
-                    }
-                };
-
-                mediaRecorder.start();
-                btnStart.disabled = true;
-                btnStop.disabled = false;
-                statusAudio.innerText = "🎤 Gravando agora...";
-            } catch (err) {
-                alert("Erro ao acessar microfone. Verifique as permissões do navegador.");
-                console.error(err);
-            }
+        mediaRecorder.ondataavailable = e => {
+            if (e.data.size > 0) audioChunks.push(e.data);
         };
 
-        btnStop.onclick = () => {
-            mediaRecorder.stop();
-            btnStart.disabled = false;
-            btnStop.disabled = true;
-            statusAudio.innerText = "⌛ Processando áudio...";
+        mediaRecorder.onstop = async () => {
+            const ext = mimeType.includes('ogg') ? 'ogg' : 'webm';
+            const blob = new Blob(audioChunks, { type: mimeType });
+
+            const formData = new FormData();
+            formData.append('texto', textoInput.value || 'Áudio Gravado');
+            formData.append('arquivo', blob, `audio_${Date.now()}.${ext}`);
+
+            statusAudio.innerText = "📤 Enviando áudio...";
+
+            const res = await fetch('/tarefas', {
+                method: 'POST',
+                body: formData
+            });
+
+            statusAudio.innerText = res.ok
+                ? "✅ Áudio salvo!"
+                : "❌ Erro ao salvar áudio";
+
+            setTimeout(() => statusAudio.innerText = "", 3000);
         };
-    </script>
+
+        mediaRecorder.start();
+        btnStart.disabled = true;
+        btnStop.disabled = false;
+        statusAudio.innerText = "🎤 Gravando...";
+
+    } catch (err) {
+        alert("Erro ao acessar microfone");
+        console.error(err);
+    }
+};
+
+btnStop.onclick = () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+    }
+    btnStart.disabled = false;
+    btnStop.disabled = true;
+};
+</script>
+
 </body>
 </html>
-

@@ -5,22 +5,24 @@
 <title>Galeria 2025</title>
 
 <style>
+* { box-sizing: border-box; }
+
 body {
     font-family: 'Segoe UI', sans-serif;
-    background: #ffffff;
+    background: #fff;
     max-width: 1200px;
-    margin: 30px auto;
+    margin: 25px auto;
     padding: 20px;
     color: #333;
 }
 
 nav {
-    background: #0d6efd;
-    padding: 16px;
-    border-radius: 12px;
+    background: linear-gradient(135deg, #0d6efd, #084298);
+    padding: 18px;
+    border-radius: 14px;
     text-align: center;
     color: white;
-    margin-bottom: 25px;
+    margin-bottom: 30px;
 }
 
 nav a {
@@ -30,39 +32,30 @@ nav a {
 }
 
 h2 {
-    margin: 25px 0 15px;
+    margin: 30px 0 15px;
     color: #0d6efd;
 }
 
-/* GRID */
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 22px;
 }
 
-/* CARD */
 .card {
     background: white;
-    border-radius: 15px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
     padding: 12px;
     position: relative;
-    transition: 0.3s;
 }
 
-.card:hover {
-    transform: translateY(-4px);
-}
-
-/* MIDIA */
 .midia {
     width: 100%;
-    height: 200px;
+    height: 190px;
     object-fit: cover;
     border-radius: 12px;
     cursor: pointer;
-    background: #000;
 }
 
 .card p {
@@ -71,16 +64,13 @@ h2 {
     margin-top: 10px;
 }
 
-/* CHECKBOX */
 .card input[type="checkbox"] {
     position: absolute;
     top: 12px;
     left: 12px;
-    transform: scale(1.4);
-    cursor: pointer;
+    transform: scale(1.3);
 }
 
-/* AUDIO */
 .audio-card {
     display: flex;
     align-items: center;
@@ -88,19 +78,21 @@ h2 {
     padding: 15px;
 }
 
-/* BOTÃO DELETE */
+.audio-card audio {
+    width: 100%;
+}
+
 .btn-delete {
-    margin-top: 30px;
+    margin-top: 35px;
     width: 100%;
     padding: 16px;
     background: #dc3545;
     color: white;
     border: none;
-    border-radius: 12px;
+    border-radius: 14px;
     font-size: 18px;
     font-weight: bold;
     cursor: pointer;
-    transition: 0.3s;
 }
 
 .btn-delete:disabled {
@@ -108,11 +100,7 @@ h2 {
     cursor: not-allowed;
 }
 
-.btn-delete:hover:not(:disabled) {
-    background: #bb2d3b;
-}
-
-/* ===== MODAL TELA CHEIA ===== */
+/* MODAL */
 .modal {
     display: none;
     position: fixed;
@@ -123,12 +111,9 @@ h2 {
     justify-content: center;
 }
 
-.modal img,
-.modal video {
+.modal img, .modal video {
     max-width: 95%;
     max-height: 95%;
-    border-radius: 14px;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
 }
 
 .close {
@@ -145,34 +130,50 @@ h2 {
 <body>
 
 <nav>
-    <a href="/">➕ Novo Cadastro</a> | <strong>🖼️ Galeria da Familia    </strong>
+    <a href="/">➕ Novo Cadastro</a> | <strong>🖼️ Galeria da Família</strong>
 </nav>
 
 <h2>🖼️ Imagens e Vídeos</h2>
 <div id="gridMidia" class="grid"></div>
 
 <h2>🎵 Áudios Gravados</h2>
-<div id="gridAudio" style="display:flex;flex-direction:column;gap:12px;"></div>
+<div id="gridAudio"></div>
 
-<button class="btn-delete" id="btnDelete" disabled onclick="deletarSelecionados()">
+<button class="btn-delete" id="btnDelete" disabled>
     🗑️ Deletar selecionados
 </button>
 
-<!-- MODAL -->
 <div id="modal" class="modal" onclick="fecharModal(event)">
     <span class="close">&times;</span>
     <div id="modalContent"></div>
 </div>
 
 <script>
-let selecionados = [];
+/* ===== MAPEAR ELEMENTOS DO DOM ===== */
+const gridMidia = document.getElementById('gridMidia');
+const gridAudio = document.getElementById('gridAudio');
+const btnDelete = document.getElementById('btnDelete');
+const modal = document.getElementById('modal');
+const modalContent = document.getElementById('modalContent');
 
+let selecionados = new Set();
+
+/* ===== AUDIO TYPE ===== */
+function getAudioType(url) {
+    const ext = url.split('.').pop().toLowerCase();
+    return {
+        mp3: 'audio/mpeg',
+        wav: 'audio/wav',
+        ogg: 'audio/ogg',
+        m4a: 'audio/mp4',
+        webm: 'audio/webm'
+    }[ext] || 'audio/mpeg';
+}
+
+/* ===== CARREGAR GALERIA ===== */
 async function carregarGaleria() {
     const res = await fetch('/tarefas');
     const tarefas = await res.json();
-
-    const gridMidia = document.getElementById('gridMidia');
-    const gridAudio = document.getElementById('gridAudio');
 
     gridMidia.innerHTML = '';
     gridAudio.innerHTML = '';
@@ -181,19 +182,24 @@ async function carregarGaleria() {
         if (!t.midia) return;
 
         const ext = t.midia.split('.').pop().toLowerCase();
-        const isAudio = ['mp3','wav','ogg','m4a'].includes(ext);
-        const isVideo = ['mp4','webm','mov'].includes(ext);
+        const isAudio = ['mp3','wav','ogg','m4a','webm'].includes(ext);
+        const isVideo = ['mp4','mov'].includes(ext);
 
         if (isAudio) {
             gridAudio.innerHTML += `
                 <div class="card audio-card">
                     <input type="checkbox" onchange="toggle(${t.id}, this)">
                     <strong>${t.texto}</strong>
-                    <audio src="${t.midia}" controls></audio>
-                </div>`;
+                    <audio controls preload="metadata">
+                        <source src="${t.midia}" type="${getAudioType(t.midia)}">
+                    </audio>
+                </div>
+            `;
         } else {
             const tag = isVideo
-                ? `<video src="${t.midia}" class="midia" onclick="abrirModal('video','${t.midia}')"></video>`
+                ? `<video class="midia" controls onclick="abrirModal('video','${t.midia}')">
+                        <source src="${t.midia}">
+                   </video>`
                 : `<img src="${t.midia}" class="midia" onclick="abrirModal('img','${t.midia}')">`;
 
             gridMidia.innerHTML += `
@@ -201,41 +207,43 @@ async function carregarGaleria() {
                     <input type="checkbox" onchange="toggle(${t.id}, this)">
                     ${tag}
                     <p>${t.texto}</p>
-                </div>`;
+                </div>
+            `;
         }
     });
 }
 
+/* ===== CHECKBOX ===== */
 function toggle(id, cb) {
-    cb.checked ? selecionados.push(id) : selecionados = selecionados.filter(i => i !== id);
-    document.getElementById('btnDelete').disabled = selecionados.length === 0;
+    cb.checked ? selecionados.add(id) : selecionados.delete(id);
+    btnDelete.disabled = selecionados.size === 0;
 }
 
-async function deletarSelecionados() {
+/* ===== DELETE ===== */
+btnDelete.onclick = async () => {
+    if (selecionados.size === 0) return;
+
     if (!confirm("Deseja realmente deletar os itens selecionados?")) return;
 
     const res = await fetch('/tarefas/delete', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ids: selecionados})
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [...selecionados] })
     });
 
     if (res.ok) {
-        alert("Itens deletados!");
-        selecionados = [];
+        alert("Itens deletados com sucesso!");
+        selecionados.clear();
+        btnDelete.disabled = true;
         carregarGaleria();
-        document.getElementById('btnDelete').disabled = true;
     } else {
-        alert("Erro ao deletar.");
+        alert("Erro ao deletar!");
     }
-}
+};
 
-/* MODAL */
+/* ===== MODAL ===== */
 function abrirModal(tipo, src) {
-    const modal = document.getElementById('modal');
-    const content = document.getElementById('modalContent');
-
-    content.innerHTML = tipo === 'video'
+    modalContent.innerHTML = tipo === 'video'
         ? `<video src="${src}" controls autoplay></video>`
         : `<img src="${src}">`;
 
@@ -244,14 +252,14 @@ function abrirModal(tipo, src) {
 
 function fecharModal(e) {
     if (e.target.id === 'modal' || e.target.classList.contains('close')) {
-        document.getElementById('modal').style.display = 'none';
-        document.getElementById('modalContent').innerHTML = '';
+        modal.style.display = 'none';
+        modalContent.innerHTML = '';
     }
 }
 
+/* ===== START ===== */
 carregarGaleria();
 </script>
 
 </body>
 </html>
-

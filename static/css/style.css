@@ -1,130 +1,110 @@
-/* Reset básico */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-/* Corpo */
 body {
-    font-family: 'Segoe UI', Tahoma, sans-serif;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    min-height: 100vh;
-    padding: 40px 15px;
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background: #f4f6fb;
 }
 
-/* Navegação */
+/* NAV */
+/* ===== MENU SUPERIOR ===== */
 nav {
-    background: #ffffff;
-    padding: 16px;
-    border-radius: 14px;
-    margin-bottom: 25px;
-    text-align: center;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    background: linear-gradient(135deg, #0d6efd, #084298);
+    padding: 18px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    border-radius: 0 0 18px 18px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
 }
 
+/* LOGO / TÍTULO */
 nav strong {
-    font-size: 1.1em;
+    font-size: 20px;
+    letter-spacing: 0.5px;
 }
 
+/* LINKS */
 nav a {
-    margin-left: 15px;
+    color: white;
     text-decoration: none;
-    color: #5a67d8;
-    font-weight: 600;
+    font-weight: bold;
+    margin-left: 15px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    transition: 0.3s;
 }
 
-/* Caixa principal */
+/* HOVER */
+nav a:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+/* MOBILE */
+@media (max-width: 600px) {
+    nav {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+
+/* LAYOUT */
+.layout {
+    display: flex;
+    min-height: calc(100vh - 70px);
+}
+
+/* IMAGEM LATERAL */
+.side-image {
+    flex: 1;
+    background: url("../img/fundo.jpg") no-repeat center center;
+    background-size: cover;
+}
+
+/* FORM */
 .box {
-    background: #ffffff;
-    max-width: 500px;
+    flex: 1;
+    max-width: 420px;   /* antes 520px */
     margin: auto;
-    padding: 30px;
-    border-radius: 18px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.18);
-    animation: fadeIn 0.6s ease-in-out;
+    padding: 22px;      /* antes 35px */
+    background: rgba(255,255,255,0.1);
+    border-radius: 14px;
+    box-shadow: 0 16px 32px rgba(0,0,0,0.15);
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(15px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
 
-/* Títulos */
-h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    color: #2d3748;
-}
-
-h3 {
-    margin-bottom: 10px;
-    color: #4a5568;
-}
-
-/* Inputs */
-input[type="text"],
-input[type="file"],
-button {
+/* INPUTS */
+input, button {
     width: 100%;
-    padding: 13px;
-    margin: 10px 0;
+    padding: 14px;
+    margin-top: 12px;
     border-radius: 10px;
     border: 1px solid #ddd;
-    font-size: 0.95em;
 }
 
-/* Botões */
+/* BOTÕES */
 button {
-    background: linear-gradient(135deg, #667eea, #5a67d8);
+    background: #0d6efd;
     color: white;
+    font-weight: bold;
     border: none;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
 }
 
-button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 20px rgba(90, 103, 216, 0.4);
+#btnStart { background: #198754; }
+#btnStop { background: #dc3545; }
+
+/* RESPONSIVO */
+@media (max-width: 900px) {
+    .layout {
+        flex-direction: column;
+    }
+
+    .side-image {
+        height: 220px;
+    }
+
+    .box {
+        margin: 20px;
+    }
 }
 
-button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-/* Seção de áudio */
-.audio-section {
-    margin-top: 25px;
-    padding-top: 15px;
-    border-top: 1px solid #eee;
-}
-
-.audio-section button {
-    margin-bottom: 8px;
-}
-
-/* Botões especiais */
-#btnStart {
-    background: linear-gradient(135deg, #38a169, #2f855a);
-}
-
-#btnStop {
-    background: linear-gradient(135deg, #e53e3e, #c53030);
-}
-
-/* Status do áudio */
-#statusAudio {
-    margin-top: 8px;
-    font-size: 0.85em;
-    font-weight: bold;
-    color: #c53030;
-    text-align: center;
-}

@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
+import uuid
 
 load_dotenv()
 app = Flask(__name__)
@@ -60,28 +61,35 @@ def deletar_tarefas():
 def galeria():
     return render_template('galeria.html')
 
+
 @app.route('/tarefas', methods=['GET', 'POST'])
 def gerenciar_tarefas():
     if request.method == 'POST':
         texto = request.form.get('texto')
-        arquivo = request.files.get('arquivo') # Nome deve bater com o JS
-        
+        arquivo = request.files.get('arquivo')
+
         nome_arquivo = None
         if arquivo and arquivo.filename != '':
-            nome_arquivo = secure_filename(arquivo.filename)
+            ext = os.path.splitext(arquivo.filename)[1]
+            nome_arquivo = f"{uuid.uuid4().hex}{ext}"
             arquivo.save(os.path.join(app.config['UPLOAD_FOLDER'], nome_arquivo))
-            
-        nova_tarefa = Tarefa(texto=texto, arquivo_url=nome_arquivo)
+
+        nova_tarefa = Tarefa(
+            texto=texto,
+            arquivo_url=nome_arquivo
+        )
         db.session.add(nova_tarefa)
         db.session.commit()
+
         return jsonify({"status": "sucesso"}), 201
 
     tarefas = Tarefa.query.all()
     return jsonify([{
-        "id": t.id, 
-        "texto": t.texto, 
+        "id": t.id,
+        "texto": t.texto,
         "midia": f"/static/uploads/{t.arquivo_url}" if t.arquivo_url else None
     } for t in tarefas])
+
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5001))
