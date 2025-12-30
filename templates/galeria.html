@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Galeria 2025</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 1000px; margin: 40px auto; background: #f0f2f5; padding: 20px; }
+        nav { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 10px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); overflow: hidden; }
+        .midia { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; background: #000; }
+        .card p { padding: 10px; margin: 0; font-weight: bold; color: #333; text-align: center; }
+        a { text-decoration: none; color: #007bff; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<!-- Substitua o conteúdo do body na galeria.html -->
+<nav>
+    <a href="/">➕ Novo Cadastro</a> | <strong>🖼️ Galeria</strong>
+</nav>
+
+<h2>🖼️ Imagens e Vídeos</h2>
+<div id="gridMidia" class="grid"></div>
+
+<h2 style="margin-top: 40px;">🎵 Áudios Gravados</h2>
+<div id="gridAudio" style="display: flex; flex-direction: column; gap: 10px;"></div>
+
+<script>
+    async function carregarGaleria() {
+        const res = await fetch('/tarefas');
+        const tarefas = await res.json();
+        const gridMidia = document.getElementById('gridMidia');
+        const gridAudio = document.getElementById('gridAudio');
+
+        tarefas.forEach(t => {
+            if (t.midia) {
+                const extensao = t.midia.split('.').pop().toLowerCase();
+                
+                // Verifica se é áudio
+                if (['mp3', 'wav', 'ogg', 'm4a'].includes(extensao)) {
+                    gridAudio.innerHTML += `
+                        <div class="card" style="display: flex; align-items: center; justify-content: space-between; padding: 15px;">
+                            <span><strong>${t.texto}</strong></span>
+                            <audio src="${t.midia}" controls></audio>
+                        </div>`;
+                } 
+                // Verifica se é vídeo ou imagem
+                else {
+                    const ehVideo = ['mp4', 'webm', 'mov'].includes(extensao);
+                    const tag = ehVideo 
+                        ? `<video src="${t.midia}" class="midia" controls></video>`
+                        : `<img src="${t.midia}" class="midia">`;
+
+                    gridMidia.innerHTML += `
+                        <div class="card">
+                            ${tag}
+                            <p>${t.texto}</p>
+                        </div>`;
+                }
+            }
+        });
+    }
+    carregarGaleria();
+</script>
+
+</body>
+</html>

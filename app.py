@@ -2,31 +2,34 @@ import os
 from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
+from werkzeug.utils import secure_filename
 
-# Carrega o .env (importante para funcionar no seu PC)
 load_dotenv()
-
 app = Flask(__name__)
 
-# AJUSTE 1: No Render, a variável é lida do sistema, não do arquivo .env
-# Além disso, adicionamos uma correção para o prefixo 'postgres://' que o Render costuma usar
-db_url = os.environ.get('DATABASE_URL')
+# Configurações de Upload
+UPLOAD_FOLDER = os.path.join('static', 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # Limite de 100MB para vídeos
 
+# Conexão Banco de Dados (Neon)
+db_url = os.environ.get('DATABASE_URL')
 if db_url and db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
 if not db_url:
-    # Se não houver variável de ambiente, tenta usar a do Neon que você forneceu
     db_url = "postgresql://neondb_owner:npg_rVAM7Sve5Flm@ep-gentle-glade-a4v86gk6-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require"
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 db = SQLAlchemy(app)
 
+# Modelo do Banco
 class Tarefa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     texto = db.Column(db.String(200), nullable=False)
+    arquivo_url = db.Column(db.String(300), nullable=True)
 
 with app.app_context():
     db.create_all()
@@ -35,24 +38,33 @@ with app.app_context():
 def index():
     return render_template('index.html')
 
+@app.route('/galeria')
+def galeria():
+    return render_template('galeria.html')
+
 @app.route('/tarefas', methods=['GET', 'POST'])
 def gerenciar_tarefas():
     if request.method == 'POST':
-        # Boa prática: verificar se o JSON existe
-        dados = request.get_json()
-        if not dados or 'texto' not in dados:
-            return jsonify({"erro": "Texto faltando"}), 400
+        texto = request.form.get('texto')
+        arquivo = request.files.get('arquivo') # Nome deve bater com o JS
+        
+        nome_arquivo = None
+        if arquivo and arquivo.filename != '':
+            nome_arquivo = secure_filename(arquivo.filename)
+            arquivo.save(os.path.join(app.config['UPLOAD_FOLDER'], nome_arquivo))
             
-        nova_tarefa = Tarefa(texto=dados['texto'])
+        nova_tarefa = Tarefa(texto=texto, arquivo_url=nome_arquivo)
         db.session.add(nova_tarefa)
         db.session.commit()
         return jsonify({"status": "sucesso"}), 201
 
     tarefas = Tarefa.query.all()
-    return jsonify([{"id": t.id, "texto": t.texto} for t in tarefas])
+    return jsonify([{
+        "id": t.id, 
+        "texto": t.texto, 
+        "midia": f"/static/uploads/{t.arquivo_url}" if t.arquivo_url else None
+    } for t in tarefas])
 
 if __name__ == '__main__':
-    # AJUSTE 2: O Render exige que o app escute na porta definida pela variável PORT
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5001))
     app.run(host='0.0.0.0', port=port, debug=True)
-
